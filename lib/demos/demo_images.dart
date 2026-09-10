@@ -8,38 +8,46 @@ import 'package:flutter/material.dart';
 /// which a gradient has, so a painted stand-in flatters the effect and tells you
 /// nothing about how it behaves on real content.
 ///
-/// The lists below are addressed by index and wrap, so a feed can ask for as
-/// many pictures as it likes without running out.
+/// Named rather than indexed, so a caption can be written about the picture it
+/// actually sits under. Credits are in `assets/CREDITS.md`.
 abstract final class DemoImages {
-  /// Wide photographs, used where a 16:9 frame is wanted.
-  static const List<String> wide = <String>[
-    'assets/photos/skyline.jpg',
-    'assets/photos/riverfront.jpg',
-    'assets/photos/fairground.jpg',
+  static const _feed = 'assets/feed';
+
+  /// Wide frames, cropped 16:9, for video thumbnails.
+  static const String concert = '$_feed/wide_concert.jpg';
+  static const String bridge = '$_feed/wide_bridge.jpg';
+  static const String cityNight = '$_feed/wide_city_night.jpg';
+  static const String traffic = '$_feed/wide_traffic.jpg';
+  static const String cliffside = '$_feed/wide_cliffside.jpg';
+  static const String palms = '$_feed/wide_palms.jpg';
+  static const String table = '$_feed/wide_table.jpg';
+  static const String drone = '$_feed/wide_drone.jpg';
+
+  /// Tall frames, cropped 4:5, for feed posts and shorts.
+  static const String portraitField = '$_feed/tall_portrait_field.jpg';
+  static const String goldenHour = '$_feed/tall_golden_hour.jpg';
+  static const String meadow = '$_feed/tall_meadow.jpg';
+  static const String berries = '$_feed/tall_berries.jpg';
+  static const String blossom = '$_feed/tall_blossom.jpg';
+  static const String pier = '$_feed/tall_pier.jpg';
+  static const String harbour = '$_feed/tall_harbour.jpg';
+  static const String coast = '$_feed/tall_coast.jpg';
+
+  /// Square crops for avatars. Not all of them are faces, which is how profile
+  /// pictures actually look.
+  static const List<String> avatars = <String>[
+    '$_feed/a_photographer.jpg',
+    '$_feed/a_field.jpg',
+    '$_feed/a_golden.jpg',
+    '$_feed/a_cat.jpg',
+    '$_feed/a_coffee.jpg',
+    '$_feed/a_car.jpg',
+    '$_feed/a_berries.jpg',
+    '$_feed/a_cactus.jpg',
   ];
 
-  /// Photographs that hold up in a tall or square crop.
-  static const List<String> tall = <String>[
-    'assets/photos/fairground.jpg',
-    'assets/photos/riverfront.jpg',
-    'assets/photos/skyline.jpg',
-  ];
-
-  /// Photographs that read well shrunk to a circle.
-  static const List<String> portrait = <String>[
-    'assets/photos/fairground.jpg',
-    'assets/photos/skyline.jpg',
-    'assets/photos/riverfront.jpg',
-  ];
-
-  /// The wide photograph at [index], wrapping.
-  static String wideAt(int index) => wide[index % wide.length];
-
-  /// The tall photograph at [index], wrapping.
-  static String tallAt(int index) => tall[index % tall.length];
-
-  /// The portrait photograph at [index], wrapping.
-  static String portraitAt(int index) => portrait[index % portrait.length];
+  /// The avatar at [index], wrapping.
+  static String avatarAt(int index) => avatars[index % avatars.length];
 }
 
 /// A photograph in a frame, cropped to fill.
@@ -59,8 +67,7 @@ class DemoImage extends StatelessWidget {
   /// Corner rounding, square by default.
   final BorderRadius? borderRadius;
 
-  /// Decode width in pixels. Worth setting for anything thumbnail sized, since
-  /// these are full resolution photographs.
+  /// Decode width in pixels. Worth setting for anything thumbnail sized.
   final int? cacheWidth;
 
   /// Which part of the photograph survives the crop.
@@ -107,7 +114,7 @@ class DemoAvatar extends StatelessWidget {
         width: size,
         height: size,
         child: Image.asset(
-          DemoImages.portraitAt(seed),
+          DemoImages.avatarAt(seed),
           fit: BoxFit.cover,
           cacheWidth: (size * 3).round(),
         ),

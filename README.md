@@ -17,7 +17,9 @@ Press **Show demos** and pick a screen to fold:
 | Your photo | Three bundled photographs, or one off your own device |
 
 Every picture is a real photograph rather than a generated placeholder. The effect is judged on
-grain and edge detail, so a gradient stand-in flatters it and teaches you nothing.
+grain and edge detail, so a gradient stand-in flatters it and teaches you nothing. The feed
+photographs come from Unsplash and are credited in `assets/CREDITS.md`; `DemoImages` is the one
+file to touch when swapping them.
 
 ## Running it
 
@@ -43,7 +45,8 @@ lib/
   tilt_readout.dart        live tilt and recalibrate
   config/                  the configuration value and its screen
   demos/                   the catalog, the host, and one file per demo
-assets/photos/             the bundled photographs
+assets/feed/               photographs for the two feeds
+assets/photos/             photographs for the photo demo
 ```
 
 The playground depends on the package by path, so it always builds against the working copy next

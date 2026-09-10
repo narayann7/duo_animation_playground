@@ -19,28 +19,38 @@ class SocialFeedDemo extends StatelessWidget {
     'elena_s',
     'tomas.b',
     'ada.c',
+    'felix.a',
   ];
 
-  static const _posts =
-      <({String handle, String place, String caption, String likes})>[
-    (
-      handle: 'priya.n',
-      place: 'Saint Paul, Minnesota',
-      caption: 'Walked up the hill for this and the clouds did the rest.',
+  static const _posts = <_Post>[
+    _Post(
+      handle: 'elena_s',
+      place: 'Rye Harbour',
+      image: DemoImages.harbour,
+      caption: 'Waited two hours for the light and a cormorant walked into '
+          'frame anyway.',
       likes: '1,284',
     ),
-    (
-      handle: 'm.oduya',
-      place: 'Midtown',
-      caption: 'Sun straight down the avenue for about four minutes a year. '
-          'Caught it.',
+    _Post(
+      handle: 'priya.n',
+      place: 'Golden hour',
+      image: DemoImages.goldenHour,
+      caption: 'Last ten minutes of sun and she would not turn round.',
       likes: '4,102',
     ),
-    (
-      handle: 'elena_s',
-      place: 'Summer fair',
-      caption: 'She screamed the whole way round and asked to go again.',
+    _Post(
+      handle: 'tomas.b',
+      place: 'Somewhere off the ridge road',
+      image: DemoImages.meadow,
+      caption: 'Sat down for a minute and stayed for an hour.',
       likes: '862',
+    ),
+    _Post(
+      handle: 'ada.c',
+      place: 'Kitchen table',
+      image: DemoImages.berries,
+      caption: 'First of the season. Four of them survived the walk home.',
+      likes: '2,470',
     ),
   ];
 
@@ -97,16 +107,34 @@ class SocialFeedDemo extends StatelessWidget {
         ),
         const Divider(height: 1),
         for (var index = 0; index < _posts.length; index++)
-          _FeedPost(post: _posts[index], seed: index),
+          _FeedPost(post: _posts[index], seed: index + 1),
       ],
     );
   }
 }
 
+/// One post in the feed.
+@immutable
+class _Post {
+  const _Post({
+    required this.handle,
+    required this.place,
+    required this.image,
+    required this.caption,
+    required this.likes,
+  });
+
+  final String handle;
+  final String place;
+  final String image;
+  final String caption;
+  final String likes;
+}
+
 class _FeedPost extends StatelessWidget {
   const _FeedPost({required this.post, required this.seed});
 
-  final ({String handle, String place, String caption, String likes}) post;
+  final _Post post;
   final int seed;
 
   @override
@@ -120,7 +148,7 @@ class _FeedPost extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           child: Row(
             children: [
-              DemoAvatar(seed: seed + 1, size: 34),
+              DemoAvatar(seed: seed, size: 34),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -141,7 +169,7 @@ class _FeedPost extends StatelessWidget {
         ),
         AspectRatio(
           aspectRatio: 4 / 5,
-          child: DemoImage(assetKey: DemoImages.tallAt(seed)),
+          child: DemoImage(assetKey: post.image),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),

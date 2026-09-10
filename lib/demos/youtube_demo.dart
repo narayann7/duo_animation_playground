@@ -11,39 +11,63 @@ class YouTubeDemo extends StatelessWidget {
   /// Creates the video feed.
   const YouTubeDemo({super.key});
 
-  static const _videos =
-      <({String title, String channel, String meta, String duration})>[
-    (
-      title: 'Sunrise over the harbour: a slow morning walk through the old town',
-      channel: 'Northbound',
-      meta: '412K views - 2 days ago',
+  static const _videos = <_Video>[
+    _Video(
+      title: 'Front row for the whole set: what a small room does to a big band',
+      channel: 'Sound Check',
+      meta: '412K views · 2 days ago',
       duration: '14:02',
+      thumbnail: DemoImages.concert,
+      avatar: 0,
     ),
-    (
+    _Video(
       title: 'How this bridge was built twice, and why the second one held',
       channel: 'Structures Explained',
-      meta: '1.2M views - 1 week ago',
+      meta: '1.2M views · 1 week ago',
       duration: '22:47',
+      thumbnail: DemoImages.bridge,
+      avatar: 1,
     ),
-    (
-      title: 'Every ride at the summer fair, ranked by someone who hates rides',
-      channel: 'Ordinary Weekends',
-      meta: '86K views - 3 days ago',
+    _Video(
+      title: 'Six hours of rush hour in ninety seconds, filmed from a rooftop',
+      channel: 'City Notes',
+      meta: '86K views · 3 days ago',
       duration: '9:15',
+      thumbnail: DemoImages.traffic,
+      avatar: 2,
     ),
-    (
-      title: 'Shooting a city skyline at golden hour with one prime lens',
+    _Video(
+      title: 'Shooting a skyline after dark with one prime lens and no tripod',
       channel: 'Frame by Frame',
-      meta: '203K views - 5 days ago',
+      meta: '203K views · 5 days ago',
       duration: '17:31',
+      thumbnail: DemoImages.cityNight,
+      avatar: 3,
+    ),
+    _Video(
+      title: 'Three days on the island, and the one street worth walking twice',
+      channel: 'Northbound',
+      meta: '755K views · 2 weeks ago',
+      duration: '25:08',
+      thumbnail: DemoImages.cliffside,
+      avatar: 4,
+    ),
+    _Video(
+      title: 'The cheap drone that finally shoots something worth keeping',
+      channel: 'Gear, Briefly',
+      meta: '1.9M views · 4 days ago',
+      duration: '11:44',
+      thumbnail: DemoImages.drone,
+      avatar: 5,
     ),
   ];
 
-  static const _shorts = <({String title, String views})>[
-    (title: 'The last five minutes of daylight', views: '1.4M'),
-    (title: 'Riverside, no filter', views: '820K'),
-    (title: 'Fair at closing time', views: '3.1M'),
-    (title: 'Downtown from the hill', views: '640K'),
+  static const _shorts = <_Short>[
+    _Short(title: 'Golden hour, no filter', views: '1.4M', image: DemoImages.goldenHour),
+    _Short(title: 'Pier at low tide', views: '820K', image: DemoImages.pier),
+    _Short(title: 'Blossom, four days early', views: '3.1M', image: DemoImages.blossom),
+    _Short(title: 'Twelve minutes of coastline', views: '640K', image: DemoImages.coast),
+    _Short(title: 'Dinner, eventually', views: '512K', image: DemoImages.berries),
   ];
 
   @override
@@ -53,10 +77,10 @@ class YouTubeDemo extends StatelessWidget {
       children: [
         const _TopBar(),
         for (var index = 0; index < 2; index++)
-          _VideoRow(video: _videos[index], seed: index),
+          _VideoRow(video: _videos[index]),
         const _ShortsShelf(shorts: _shorts),
         for (var index = 2; index < _videos.length; index++)
-          _VideoRow(video: _videos[index], seed: index),
+          _VideoRow(video: _videos[index]),
       ],
     );
   }
@@ -101,18 +125,51 @@ class _TopBar extends StatelessWidget {
           const SizedBox(width: 20),
           const Icon(Icons.search, size: 22),
           const SizedBox(width: 16),
-          const DemoAvatar(seed: 1, size: 28),
+          const DemoAvatar(seed: 6, size: 28),
         ],
       ),
     );
   }
 }
 
-class _VideoRow extends StatelessWidget {
-  const _VideoRow({required this.video, required this.seed});
+/// One row in the video feed.
+@immutable
+class _Video {
+  const _Video({
+    required this.title,
+    required this.channel,
+    required this.meta,
+    required this.duration,
+    required this.thumbnail,
+    required this.avatar,
+  });
 
-  final ({String title, String channel, String meta, String duration}) video;
-  final int seed;
+  final String title;
+  final String channel;
+  final String meta;
+  final String duration;
+  final String thumbnail;
+  final int avatar;
+}
+
+/// One card in the shorts shelf.
+@immutable
+class _Short {
+  const _Short({
+    required this.title,
+    required this.views,
+    required this.image,
+  });
+
+  final String title;
+  final String views;
+  final String image;
+}
+
+class _VideoRow extends StatelessWidget {
+  const _VideoRow({required this.video});
+
+  final _Video video;
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +184,7 @@ class _VideoRow extends StatelessWidget {
             children: [
               AspectRatio(
                 aspectRatio: 16 / 9,
-                child: DemoImage(assetKey: DemoImages.wideAt(seed)),
+                child: DemoImage(assetKey: video.thumbnail),
               ),
               Positioned(
                 right: 8,
@@ -156,7 +213,7 @@ class _VideoRow extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                DemoAvatar(seed: seed + 2, size: 36),
+                DemoAvatar(seed: video.avatar, size: 36),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -173,7 +230,7 @@ class _VideoRow extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${video.channel}  ${video.meta}',
+                        '${video.channel} · ${video.meta}',
                         style: theme.textTheme.bodySmall
                             ?.copyWith(color: scheme.onSurfaceVariant),
                       ),
@@ -193,7 +250,7 @@ class _VideoRow extends StatelessWidget {
 class _ShortsShelf extends StatelessWidget {
   const _ShortsShelf({required this.shorts});
 
-  final List<({String title, String views})> shorts;
+  final List<_Short> shorts;
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +302,7 @@ class _ShortsShelf extends StatelessWidget {
                     fit: StackFit.expand,
                     children: [
                       DemoImage(
-                        assetKey: DemoImages.tallAt(index),
+                        assetKey: short.image,
                         borderRadius: BorderRadius.circular(12),
                         cacheWidth: 440,
                       ),

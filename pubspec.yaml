@@ -61,6 +61,7 @@ flutter:
   # before anything is picked off the device.
   assets:
     - assets/photos/
+    - assets/feed/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

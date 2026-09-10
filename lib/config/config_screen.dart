@@ -114,6 +114,21 @@ class ConfigScreen extends StatelessWidget {
             ),
           ),
           _ParameterSlider(
+            label: 'Tilt response',
+            value: parameters.tiltResponse,
+            min: 1,
+            max: 4,
+            fractionDigits: 2,
+            help: 'How tilt maps onto the fold. One is linear. Higher holds the '
+                'small tilts back and leaves the widest tilt where it is, which '
+                'is what a large screen usually wants.',
+            onChanged: (value) => onChanged(
+              config.copyWith(
+                parameters: parameters.copyWith(tiltResponse: value),
+              ),
+            ),
+          ),
+          _ParameterSlider(
             label: 'Eye distance',
             value: parameters.eyeDistanceMillimeters,
             min: 200,

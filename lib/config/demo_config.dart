@@ -70,12 +70,13 @@ enum DemoTint {
 class DemoConfig {
   /// Creates a config.
   ///
-  /// Defaults match the package apart from the base blur, which the demo starts
-  /// at 0.6 mm so the frost is visible across the whole screen from the first
-  /// tilt rather than only at the lifted edge.
+  /// Defaults match the package apart from the tilt response, which starts at 2
+  /// here. The playground gets run on tablets, where a linear response spends
+  /// most of the fold in the first few degrees because the hinge sits so far
+  /// from the opposite edge.
   const DemoConfig({
     this.constraintOption = DemoConstraintOption.horizontal,
-    this.parameters = const DuoFoldParameters(baseBlurMillimeters: 0.6),
+    this.parameters = const DuoFoldParameters(tiltResponse: 2),
     this.enabled = true,
     this.autoRecenter = true,
     this.useSensor = true,
