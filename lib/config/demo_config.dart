@@ -156,4 +156,130 @@ class DemoConfig {
       surroundTint: surroundTint ?? this.surroundTint,
     );
   }
+
+  /// Reads a config back out of [json], falling back to the default for any
+  /// field that is missing or the wrong shape.
+  ///
+  /// Tolerant on purpose: the file this comes from was written by an older
+  /// build of the playground, and a knob that has since been renamed should
+  /// cost you that one knob rather than the whole saved setup.
+  factory DemoConfig.fromJson(Map<String, Object?> json) {
+    const defaults = DemoConfig();
+    final parameters = json['parameters'];
+    final parameterJson = parameters is Map<String, Object?>
+        ? parameters
+        : const <String, Object?>{};
+    final defaultParameters = defaults.parameters;
+    return DemoConfig(
+      constraintOption: _enumFrom(
+        DemoConstraintOption.values,
+        json['constraintOption'],
+        defaults.constraintOption,
+      ),
+      // Only the values the config screen exposes. The two colours on
+      // DuoFoldParameters are not among them: the host overwrites both from
+      // the tints every build, so writing them down would be recording an
+      // answer that is computed anyway.
+      parameters: DuoFoldParameters(
+        eyeDistanceMillimeters: _doubleFrom(
+          parameterJson,
+          'eyeDistanceMillimeters',
+          defaultParameters.eyeDistanceMillimeters,
+        ),
+        pixelsPerMillimeter: _doubleFrom(
+          parameterJson,
+          'pixelsPerMillimeter',
+          defaultParameters.pixelsPerMillimeter,
+        ),
+        blurSpread: _doubleFrom(
+          parameterJson,
+          'blurSpread',
+          defaultParameters.blurSpread,
+        ),
+        darkening: _doubleFrom(
+          parameterJson,
+          'darkening',
+          defaultParameters.darkening,
+        ),
+        baseBlurMillimeters: _doubleFrom(
+          parameterJson,
+          'baseBlurMillimeters',
+          defaultParameters.baseBlurMillimeters,
+        ),
+        stretchEdges: _boolFrom(
+          parameterJson,
+          'stretchEdges',
+          defaultParameters.stretchEdges,
+        ),
+        tiltResponse: _doubleFrom(
+          parameterJson,
+          'tiltResponse',
+          defaultParameters.tiltResponse,
+        ),
+      ),
+      enabled: _boolFrom(json, 'enabled', defaults.enabled),
+      autoRecenter: _boolFrom(json, 'autoRecenter', defaults.autoRecenter),
+      useSensor: _boolFrom(json, 'useSensor', defaults.useSensor),
+      manualTiltDegrees: _doubleFrom(
+        json,
+        'manualTiltDegrees',
+        defaults.manualTiltDegrees,
+      ),
+      darkMode: _boolFrom(json, 'darkMode', defaults.darkMode),
+      paintBackground:
+          _boolFrom(json, 'paintBackground', defaults.paintBackground),
+      hazeTint: _enumFrom(DemoTint.values, json['hazeTint'], defaults.hazeTint),
+      surroundTint: _enumFrom(
+        DemoTint.values,
+        json['surroundTint'],
+        defaults.surroundTint,
+      ),
+    );
+  }
+
+  /// The config as plain JSON types, ready for the store.
+  Map<String, Object?> toJson() {
+    return <String, Object?>{
+      'constraintOption': constraintOption.name,
+      'parameters': <String, Object?>{
+        'eyeDistanceMillimeters': parameters.eyeDistanceMillimeters,
+        'pixelsPerMillimeter': parameters.pixelsPerMillimeter,
+        'blurSpread': parameters.blurSpread,
+        'darkening': parameters.darkening,
+        'baseBlurMillimeters': parameters.baseBlurMillimeters,
+        'stretchEdges': parameters.stretchEdges,
+        'tiltResponse': parameters.tiltResponse,
+      },
+      'enabled': enabled,
+      'autoRecenter': autoRecenter,
+      'useSensor': useSensor,
+      'manualTiltDegrees': manualTiltDegrees,
+      'darkMode': darkMode,
+      'paintBackground': paintBackground,
+      'hazeTint': hazeTint.name,
+      'surroundTint': surroundTint.name,
+    };
+  }
+}
+
+/// The number at [key], or [fallback] when there is not one there.
+double _doubleFrom(Map<String, Object?> json, String key, double fallback) {
+  final value = json[key];
+  return value is num ? value.toDouble() : fallback;
+}
+
+/// The flag at [key], or [fallback] when there is not one there.
+bool _boolFrom(Map<String, Object?> json, String key, bool fallback) {
+  final value = json[key];
+  return value is bool ? value : fallback;
+}
+
+/// The member of [values] named [name], or [fallback] when no member is.
+T _enumFrom<T extends Enum>(List<T> values, Object? name, T fallback) {
+  for (final value in values) {
+    if (value.name == name) {
+      return value;
+    }
+  }
+  return fallback;
 }

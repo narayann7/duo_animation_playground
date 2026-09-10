@@ -14,7 +14,13 @@ Press **Show demos** and pick a screen to fold:
 | --- | --- |
 | Social feed | Photographs against small type, the mix the fold reads best on |
 | Video feed | Several large thumbnails on screen at once, densest of the three |
-| Your photo | Three bundled photographs, or one off your own device |
+| Your photo | Three bundled photographs, plus up to five off your own device |
+
+Nothing you set has to be set twice. The configuration and the photographs you added are written
+to the app's support directory as you change them and read back before the first frame, so a
+relaunch opens where you left off. Photographs picked off the device are copied in rather than
+referenced, because the picker hands back a file in a temporary directory the system empties on
+its own schedule. Five is the ceiling; the cross on a tile removes it and makes room for another.
 
 Every picture is a real photograph rather than a generated placeholder. The effect is judged on
 grain and edge detail, so a gradient stand-in flatters it and teaches you nothing. The feed
@@ -54,6 +60,7 @@ restart.
 ```
 lib/
   main.dart                app root, one controller, config state
+  playground_store.dart    settings and photographs, kept between runs
   tilt_readout.dart        live tilt and recalibrate
   config/                  the configuration value and its screen
   demos/                   the catalog, the host, and one file per demo

@@ -4,7 +4,9 @@ import 'package:fossui/fossui.dart';
 
 import 'config/config_screen.dart';
 import 'config/demo_config.dart';
+import 'demos/photo_demo.dart';
 import 'foss_material_theme.dart';
+import 'playground_store.dart';
 
 /// Entry point for the Duo Animation Playground.
 ///
@@ -15,14 +17,30 @@ import 'foss_material_theme.dart';
 /// Tilt is driven by the device orientation sensors. The first sample latches
 /// the pose the phone was held at on launch, so that angle reads as flat and
 /// everything is measured against it. Recalibrate re-latches it.
-void main() {
-  runApp(const DuoFoldDemoApp());
+///
+/// Both halves of the setup, the settings and the photographs, are read back
+/// off disk before the first frame. Waiting for them is the point: a launch
+/// that painted the defaults and then swapped to your own settings a frame
+/// later would look like the app changing its mind.
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final json = await PlaygroundStore.readJson(PlaygroundStore.configFile);
+  await restorePhotoLibrary();
+  runApp(
+    DuoFoldDemoApp(
+      initialConfig:
+          json == null ? const DemoConfig() : DemoConfig.fromJson(json),
+    ),
+  );
 }
 
 /// Root of the demo. Owns the one controller and the current configuration.
 class DuoFoldDemoApp extends StatefulWidget {
   /// Creates the demo app.
-  const DuoFoldDemoApp({super.key});
+  const DuoFoldDemoApp({super.key, this.initialConfig = const DemoConfig()});
+
+  /// The configuration to open on, read back off disk by [main].
+  final DemoConfig initialConfig;
 
   @override
   State<DuoFoldDemoApp> createState() => _DuoFoldDemoAppState();
@@ -34,7 +52,7 @@ class _DuoFoldDemoAppState extends State<DuoFoldDemoApp> {
   /// latched reference pose.
   final DuoFoldController _controller = DuoFoldController();
 
-  DemoConfig _config = const DemoConfig();
+  late DemoConfig _config = widget.initialConfig;
 
   @override
   void initState() {
@@ -57,6 +75,9 @@ class _DuoFoldDemoAppState extends State<DuoFoldDemoApp> {
   void _onConfigChanged(DemoConfig config) {
     setState(() => _config = config);
     _applyToController(config);
+    // Debounced inside the store: a slider drag is one write, not one per
+    // frame.
+    PlaygroundStore.writeJson(PlaygroundStore.configFile, config.toJson());
   }
 
   @override

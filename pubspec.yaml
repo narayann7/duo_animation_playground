@@ -39,6 +39,11 @@ dependencies:
   # the package itself takes no runtime dependencies.
   fossui: 0.1.2
 
+  # Gives the playground somewhere to keep its settings and any picked
+  # photograph between runs. Playground only: the package itself takes no
+  # runtime dependencies.
+  path_provider: ^2.1.6
+
 dev_dependencies:
   integration_test:
     sdk: flutter

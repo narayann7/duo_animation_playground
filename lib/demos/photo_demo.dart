@@ -4,6 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:fossui/fossui.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../playground_store.dart';
+
+/// How many photographs can be held off the device at once.
+///
+/// Five is enough to line up a set worth comparing and still leaves the strip a
+/// strip: with the bundled three and the add button that is nine tiles, which
+/// is already wider than a phone and scrolls.
+const int maxImportedPhotos = 5;
+
 /// A photograph to fold: either one of the bundled ones or a file off the
 /// device.
 @immutable
@@ -41,24 +50,163 @@ class PhotoChoice {
   int get hashCode => Object.hash(assetKey, file?.path);
 }
 
+const PhotoChoice _fairground =
+    PhotoChoice.asset('assets/photos/fairground.jpg');
+
 /// The bundled photographs, chosen to cover different kinds of detail: faces
 /// and motion blur, a horizon of hard architectural edges, and a wide view
 /// with foliage and cloud.
 const List<PhotoChoice> bundledPhotos = <PhotoChoice>[
-  PhotoChoice.asset('assets/photos/fairground.jpg'),
+  _fairground,
   PhotoChoice.asset('assets/photos/skyline.jpg'),
   PhotoChoice.asset('assets/photos/riverfront.jpg'),
 ];
 
-/// The photo the demo is currently showing.
+/// What the photo demo has to show and which of it is on screen.
+///
+/// One value rather than two notifiers: the strip draws from both halves, and
+/// deleting the picture being folded has to move the selection in the same
+/// breath, which is a single edit here and a two-step with a visible gap in
+/// between if the two are kept apart.
+@immutable
+class PhotoLibrary {
+  /// Creates a library.
+  const PhotoLibrary({
+    this.imported = const <PhotoChoice>[],
+    this.selected = _fairground,
+  });
+
+  /// Reads a library back out of [json], dropping anything that has gone
+  /// stale.
+  ///
+  /// Both halves can rot between runs: an asset can be dropped from the bundle
+  /// by a later build, and an imported file can be deleted from under the app.
+  /// Whatever survives is kept and the rest is forgotten quietly, because the
+  /// worst case is opening on the first bundled photograph, which is where the
+  /// demo starts anyway.
+  factory PhotoLibrary.fromJson(Map<String, Object?> json) {
+    final imported = <PhotoChoice>[];
+    final paths = json['imported'];
+    if (paths is List) {
+      for (final path in paths) {
+        if (path is String && File(path).existsSync()) {
+          imported.add(PhotoChoice.file(File(path)));
+        }
+        if (imported.length == maxImportedPhotos) {
+          break;
+        }
+      }
+    }
+    final selected = json['selected'];
+    return PhotoLibrary(
+      imported: imported,
+      selected: _selectedFrom(selected, imported) ?? _fairground,
+    );
+  }
+
+  /// Photographs picked off the device, oldest first, never more than
+  /// [maxImportedPhotos] of them.
+  final List<PhotoChoice> imported;
+
+  /// The one being folded.
+  final PhotoChoice selected;
+
+  /// Everything the strip offers, in the order it draws them.
+  List<PhotoChoice> get all => <PhotoChoice>[...bundledPhotos, ...imported];
+
+  /// Whether there is room for another import.
+  bool get isFull => imported.length >= maxImportedPhotos;
+
+  /// Returns a copy with the given fields replaced.
+  PhotoLibrary copyWith({
+    List<PhotoChoice>? imported,
+    PhotoChoice? selected,
+  }) {
+    return PhotoLibrary(
+      imported: imported ?? this.imported,
+      selected: selected ?? this.selected,
+    );
+  }
+
+  /// The library as plain JSON types, ready for the store.
+  ///
+  /// Imports travel as paths and the selection as the kind of thing it is,
+  /// since an asset key and a file path are only told apart by the key they
+  /// arrive under.
+  Map<String, Object?> toJson() {
+    final assetKey = selected.assetKey;
+    return <String, Object?>{
+      'imported': <String>[
+        for (final photo in imported) photo.file!.path,
+      ],
+      'selected': assetKey != null
+          ? <String, Object?>{'asset': assetKey}
+          : <String, Object?>{'file': selected.file!.path},
+    };
+  }
+
+  /// The saved selection, if it still points at something on offer.
+  static PhotoChoice? _selectedFrom(Object? json, List<PhotoChoice> imported) {
+    if (json is! Map<String, Object?>) {
+      return null;
+    }
+    final assetKey = json['asset'];
+    if (assetKey is String) {
+      for (final photo in bundledPhotos) {
+        if (photo.assetKey == assetKey) {
+          return photo;
+        }
+      }
+      return null;
+    }
+    final path = json['file'];
+    for (final photo in imported) {
+      if (photo.file!.path == path) {
+        return photo;
+      }
+    }
+    return null;
+  }
+}
+
+/// What the photo demo is showing, and everything it could show.
 ///
 /// One notifier for the life of the app, because the picker strip is drawn
 /// outside the fold and the picture inside it. They are in different subtrees
 /// on purpose: a control inside the filter still responds where it would have
 /// been un-tilted, so the strip would drift away from its own hit target as
 /// soon as you tilted the phone.
-final ValueNotifier<PhotoChoice> photoSelection =
-    ValueNotifier<PhotoChoice>(bundledPhotos.first);
+final ValueNotifier<PhotoLibrary> photoLibrary =
+    ValueNotifier<PhotoLibrary>(const PhotoLibrary());
+
+bool _watchingLibrary = false;
+
+/// Puts the demo back to the photographs it had last time, and mirrors every
+/// change from here on.
+///
+/// Called once, before the first frame. Awaiting it costs a file read on a
+/// launch that is already waiting on the framework, and the alternative is the
+/// demo opening on the bundled photograph and swapping under you a moment
+/// later.
+Future<void> restorePhotoLibrary() async {
+  final json = await PlaygroundStore.readJson(PlaygroundStore.photoFile);
+  if (json != null) {
+    photoLibrary.value = PhotoLibrary.fromJson(json);
+  }
+  await PlaygroundStore.pruneImports(<String>{
+    for (final photo in photoLibrary.value.imported) photo.file!.path,
+  });
+  if (_watchingLibrary) {
+    return;
+  }
+  _watchingLibrary = true;
+  photoLibrary.addListener(() {
+    PlaygroundStore.writeJson(
+      PlaygroundStore.photoFile,
+      photoLibrary.value.toJson(),
+    );
+  });
+}
 
 /// Folds a photograph, edge to edge.
 ///
@@ -70,10 +218,10 @@ class PhotoDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<PhotoChoice>(
-      valueListenable: photoSelection,
-      builder: (context, choice, _) {
-        return SizedBox.expand(child: choice.build());
+    return ValueListenableBuilder<PhotoLibrary>(
+      valueListenable: photoLibrary,
+      builder: (context, library, _) {
+        return SizedBox.expand(child: library.selected.build());
       },
     );
   }
@@ -99,33 +247,76 @@ class _PhotoPickerBarState extends State<PhotoPickerBar> {
     if (_picking) {
       return;
     }
+    if (photoLibrary.value.isFull) {
+      _say('Holding $maxImportedPhotos photographs already. Remove one first.');
+      return;
+    }
     setState(() => _picking = true);
     try {
       final picked = await _picker.pickImage(source: ImageSource.gallery);
+      // Copied into the playground's own directory before the library is
+      // pointed at it: the picker hands back a file in a temporary directory
+      // that the system is free to empty, so the path it returns outlives the
+      // pick by no promise at all.
+      final kept = picked == null
+          ? null
+          : await PlaygroundStore.importPhoto(File(picked.path));
       if (!mounted) {
         return;
       }
       setState(() => _picking = false);
-      if (picked != null) {
-        photoSelection.value = PhotoChoice.file(File(picked.path));
+      if (kept == null) {
+        return;
       }
+      final photo = PhotoChoice.file(kept);
+      final library = photoLibrary.value;
+      photoLibrary.value = library.copyWith(
+        imported: <PhotoChoice>[...library.imported, photo],
+        selected: photo,
+      );
     } on Object catch (error) {
       if (!mounted) {
         return;
       }
       setState(() => _picking = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open the picker: $error')),
-      );
+      _say('Could not open the picker: $error');
     }
+  }
+
+  /// Drops [photo] from the library and from the disk.
+  ///
+  /// The library moves first and the file goes afterwards, so nothing is ever
+  /// drawing an image out of a file that has already been unlinked. Removing
+  /// the picture currently being folded falls back to the first bundled one
+  /// rather than to a neighbour, which would depend on where in the strip you
+  /// happened to tap.
+  Future<void> _remove(PhotoChoice photo) async {
+    final library = photoLibrary.value;
+    photoLibrary.value = library.copyWith(
+      imported: <PhotoChoice>[
+        for (final kept in library.imported)
+          if (kept != photo) kept,
+      ],
+      selected: library.selected == photo ? bundledPhotos.first : null,
+    );
+    // The demo drew this one at full resolution, and that decoded copy is
+    // worth handing back rather than leaving in the image cache under a path
+    // that no longer resolves. The strip's thumbnail is keyed on a resize
+    // around the same file and ages out on its own.
+    await FileImage(photo.file!).evict();
+    await PlaygroundStore.deletePhoto(photo.file!);
+  }
+
+  void _say(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<PhotoChoice>(
-      valueListenable: photoSelection,
-      builder: (context, choice, _) {
-        final picked = choice.file == null ? null : choice;
+    return ValueListenableBuilder<PhotoLibrary>(
+      valueListenable: photoLibrary,
+      builder: (context, library, _) {
         // The strip floats over a full-bleed photograph, so its colours are
         // pinned rather than taken from the theme: whatever picture is behind
         // it, the tiles have to stay visible. Corner radii still come from the
@@ -136,38 +327,53 @@ class _PhotoPickerBarState extends State<PhotoPickerBar> {
             color: Color(0x8A000000),
             borderRadius: BorderRadius.all(Radius.circular(FossRadii.full)),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final photo in bundledPhotos)
-                _PhotoTile(
-                  selected: photo == choice,
-                  onTap: () => photoSelection.value = photo,
-                  child: photo.build(cacheWidth: 160),
-                ),
-              if (picked != null)
-                _PhotoTile(
-                  selected: true,
-                  onTap: _pick,
-                  child: picked.build(cacheWidth: 160),
-                ),
-              _PhotoTile(
-                selected: false,
-                onTap: _pick,
-                child: ColoredBox(
-                  color: const Color(0x33FFFFFF),
-                  child: Center(
-                    child: _picking
-                        ? const FossSpinner(size: 18, color: Colors.white)
-                        : const Icon(
-                            Icons.add_photo_alternate_outlined,
-                            color: Colors.white,
-                            size: 22,
-                          ),
+          // A full library is nine tiles, which is wider than a phone. The
+          // constraint is what gives the scroll view something to scroll
+          // inside: the strip is bottom-aligned in a stack, so the height is
+          // pinned but the width arrives loose.
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.sizeOf(context).width - 48,
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final photo in library.all)
+                    _PhotoTile(
+                      selected: photo == library.selected,
+                      onTap: () => photoLibrary.value =
+                          library.copyWith(selected: photo),
+                      onDelete:
+                          photo.file == null ? null : () => _remove(photo),
+                      child: photo.build(cacheWidth: 160),
+                    ),
+                  _PhotoTile(
+                    selected: false,
+                    onTap: _pick,
+                    child: ColoredBox(
+                      color: const Color(0x33FFFFFF),
+                      child: Center(
+                        child: _picking
+                            ? const FossSpinner(size: 18, color: Colors.white)
+                            : Icon(
+                                Icons.add_photo_alternate_outlined,
+                                // Dimmed rather than dropped when the library
+                                // is full: a tile that vanishes at five and
+                                // reappears at four reads as a bug, and the
+                                // tap explains itself.
+                                color: library.isFull
+                                    ? const Color(0x66FFFFFF)
+                                    : Colors.white,
+                                size: 22,
+                              ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -175,20 +381,26 @@ class _PhotoPickerBarState extends State<PhotoPickerBar> {
   }
 }
 
-/// One 52pt square in the strip, ringed when it is the one being shown.
+/// One 52pt square in the strip, ringed when it is the one being shown and
+/// badged when it is one you can remove.
 class _PhotoTile extends StatelessWidget {
   const _PhotoTile({
     required this.selected,
     required this.onTap,
     required this.child,
+    this.onDelete,
   });
 
   final bool selected;
   final VoidCallback onTap;
   final Widget child;
 
+  /// Set on imported photographs, which are the only ones that can go.
+  final VoidCallback? onDelete;
+
   @override
   Widget build(BuildContext context) {
+    final onDelete = this.onDelete;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: GestureDetector(
@@ -204,7 +416,37 @@ class _PhotoTile extends StatelessWidget {
             ),
           ),
           clipBehavior: Clip.antiAlias,
-          child: child,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              child,
+              if (onDelete != null)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  // Inside the tile rather than hanging off its corner: the
+                  // tile clips, and the strip has no room to spare besides.
+                  child: GestureDetector(
+                    onTap: onDelete,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: const BoxDecoration(
+                        color: Color(0xCC000000),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(10),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 13,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
