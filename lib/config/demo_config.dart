@@ -1,5 +1,6 @@
 import 'package:duo_animation/duo_animation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:fossui/fossui.dart';
 
 /// The constraint presets the config screen can pick between.
 enum DemoConstraintOption {
@@ -57,8 +58,8 @@ enum DemoTint {
 
   final Color? _color;
 
-  /// The colour to hand the fold, resolved against [scheme] for [surface].
-  Color resolve(ColorScheme scheme) => _color ?? scheme.surface;
+  /// The colour to hand the fold, resolved against [colors] for [surface].
+  Color resolve(FossColors colors) => _color ?? colors.background;
 }
 
 /// Everything the config screen collects, in one immutable value.

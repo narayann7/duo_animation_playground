@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fossui/fossui.dart';
 
 /// The photographs the demos draw from.
 ///
@@ -88,36 +89,48 @@ class DemoImage extends StatelessWidget {
   }
 }
 
-/// A circular photographic avatar.
+/// A circular photographic avatar, optionally inside an unread story ring.
+///
+/// The circle itself is a [FossAvatar], so it picks up the same background and
+/// fallback type as every other avatar in the app. The ring is drawn here: it
+/// is a feed convention rather than a component, and no UI kit ships one.
 class DemoAvatar extends StatelessWidget {
   /// Creates an avatar.
   const DemoAvatar({
     super.key,
     required this.seed,
-    this.size = 40,
+    this.size = FossAvatarSize.xl,
     this.ring = false,
   });
 
   /// Picks which photograph is used, wrapping.
   final int seed;
 
-  /// Diameter in logical pixels, any ring excluded.
-  final double size;
+  /// The avatar step. Diameters run 24 to 48.
+  final FossAvatarSize size;
 
   /// True draws the unread story ring around it.
   final bool ring;
 
+  /// The diameter [size] renders at. fossui keeps its own copy private, and the
+  /// ring has to know how much room the circle takes before it draws around it.
+  static double diameterOf(FossAvatarSize size) => switch (size) {
+        FossAvatarSize.xs => 24,
+        FossAvatarSize.sm => 28,
+        FossAvatarSize.md => 32,
+        FossAvatarSize.lg => 36,
+        FossAvatarSize.xl => 40,
+        FossAvatarSize.xl2 => 48,
+      };
+
   @override
   Widget build(BuildContext context) {
-    final circle = ClipOval(
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: Image.asset(
-          DemoImages.avatarAt(seed),
-          fit: BoxFit.cover,
-          cacheWidth: (size * 3).round(),
-        ),
+    final diameter = diameterOf(size);
+    final circle = FossAvatar(
+      size: size,
+      image: ResizeImage(
+        AssetImage(DemoImages.avatarAt(seed)),
+        width: (diameter * 3).round(),
       ),
     );
     if (!ring) {
@@ -135,7 +148,7 @@ class DemoAvatar extends StatelessWidget {
         padding: const EdgeInsets.all(2),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Theme.of(context).colorScheme.surface,
+          color: context.fossTheme.colors.background,
         ),
         child: circle,
       ),

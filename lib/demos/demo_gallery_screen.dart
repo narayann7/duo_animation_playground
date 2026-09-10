@@ -1,5 +1,6 @@
 import 'package:duo_animation/duo_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:fossui/fossui.dart';
 
 import '../config/demo_config.dart';
 import 'demo_catalog.dart';
@@ -23,37 +24,32 @@ class DemoGalleryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = context.fossTheme.colors;
     return Scaffold(
+      // The Material app bar stays for its back button, dressed in fossui
+      // colours by the app theme. fossui ships no app bar of its own.
       appBar: AppBar(title: const Text('Demos')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          Text(
+          FossText.caption(
             'Constraint ${config.constraintOption.label.toLowerCase()}, '
             'blur ${config.parameters.blurSpread.toStringAsFixed(3)}, '
             'darkening ${config.parameters.darkening.toStringAsFixed(4)}'
             '${config.enabled ? '' : ', effect off'}',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            color: FossTextColor.mutedForeground,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           for (final entry in demoCatalog)
-            Card(
-              clipBehavior: Clip.antiAlias,
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                leading: CircleAvatar(
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  child: Icon(
-                    entry.icon,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: FossListTile(
                 title: Text(entry.title),
                 subtitle: Text(entry.subtitle),
+                leading: FossAvatar(
+                  size: FossAvatarSize.xl,
+                  fallback: Icon(entry.icon, color: colors.primary, size: 20),
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.of(context).push(

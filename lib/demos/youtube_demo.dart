@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:fossui/fossui.dart';
 
 import 'demo_images.dart';
 
-/// A video home feed: a top bar, a shorts shelf and a column of video rows.
+/// A video home feed: a top bar, a filter row, a shorts shelf and a column of
+/// video rows.
 ///
 /// Thumbnails are the point. A feed like this puts several large photographs on
 /// screen at once with small type packed between them, which is the densest
@@ -11,9 +13,26 @@ class YouTubeDemo extends StatelessWidget {
   /// Creates the video feed.
   const YouTubeDemo({super.key});
 
+  /// The pill that reads as chosen. Fixed, and none of them respond to a tap:
+  /// the filter moves pixels and not hit boxes, so a control behind the glass
+  /// answers where it would have been untilted, which reads as broken the
+  /// moment the device leans. Interactive parts of a demo go in the host's
+  /// overlay instead.
+  static const _filter = 'All';
+
+  static const _filters = <String>[
+    'All',
+    'Music',
+    'Live',
+    'Photography',
+    'Travel',
+    'Gaming',
+  ];
+
   static const _videos = <_Video>[
     _Video(
-      title: 'Front row for the whole set: what a small room does to a big band',
+      title:
+          'Front row for the whole set: what a small room does to a big band',
       channel: 'Sound Check',
       meta: '412K views · 2 days ago',
       duration: '14:02',
@@ -35,6 +54,7 @@ class YouTubeDemo extends StatelessWidget {
       duration: '9:15',
       thumbnail: DemoImages.traffic,
       avatar: 2,
+      live: true,
     ),
     _Video(
       title: 'Shooting a skyline after dark with one prime lens and no tripod',
@@ -63,11 +83,27 @@ class YouTubeDemo extends StatelessWidget {
   ];
 
   static const _shorts = <_Short>[
-    _Short(title: 'Golden hour, no filter', views: '1.4M', image: DemoImages.goldenHour),
+    _Short(
+      title: 'Golden hour, no filter',
+      views: '1.4M',
+      image: DemoImages.goldenHour,
+    ),
     _Short(title: 'Pier at low tide', views: '820K', image: DemoImages.pier),
-    _Short(title: 'Blossom, four days early', views: '3.1M', image: DemoImages.blossom),
-    _Short(title: 'Twelve minutes of coastline', views: '640K', image: DemoImages.coast),
-    _Short(title: 'Dinner, eventually', views: '512K', image: DemoImages.berries),
+    _Short(
+      title: 'Blossom, four days early',
+      views: '3.1M',
+      image: DemoImages.blossom,
+    ),
+    _Short(
+      title: 'Twelve minutes of coastline',
+      views: '640K',
+      image: DemoImages.coast,
+    ),
+    _Short(
+      title: 'Ten minutes before the rain',
+      views: '512K',
+      image: DemoImages.portraitField,
+    ),
   ];
 
   @override
@@ -76,6 +112,7 @@ class YouTubeDemo extends StatelessWidget {
       padding: EdgeInsets.zero,
       children: [
         const _TopBar(),
+        const _FilterRow(filters: _filters, selected: _filter),
         for (var index = 0; index < 2; index++)
           _VideoRow(video: _videos[index]),
         const _ShortsShelf(shorts: _shorts),
@@ -91,7 +128,6 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
       child: Row(
@@ -104,20 +140,10 @@ class _TopBar extends StatelessWidget {
               color: const Color(0xFFFF0033),
               borderRadius: BorderRadius.circular(5),
             ),
-            child: const Icon(
-              Icons.play_arrow,
-              size: 13,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.play_arrow, size: 13, color: Colors.white),
           ),
           const SizedBox(width: 6),
-          Text(
-            'Videos',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
-            ),
-          ),
+          const FossText.heading('Videos'),
           const Spacer(),
           const Icon(Icons.cast_outlined, size: 22),
           const SizedBox(width: 20),
@@ -125,8 +151,37 @@ class _TopBar extends StatelessWidget {
           const SizedBox(width: 20),
           const Icon(Icons.search, size: 22),
           const SizedBox(width: 16),
-          const DemoAvatar(seed: 6, size: 28),
+          const DemoAvatar(seed: 6, size: FossAvatarSize.sm),
         ],
+      ),
+    );
+  }
+}
+
+/// The scrolling row of category pills under the top bar.
+class _FilterRow extends StatelessWidget {
+  const _FilterRow({required this.filters, required this.selected});
+
+  final List<String> filters;
+  final String selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        itemCount: filters.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final filter = filters[index];
+          return FossChip(
+            label: Text(filter),
+            size: FossChipSize.sm,
+            selected: filter == selected,
+          );
+        },
       ),
     );
   }
@@ -142,6 +197,7 @@ class _Video {
     required this.duration,
     required this.thumbnail,
     required this.avatar,
+    this.live = false,
   });
 
   final String title;
@@ -150,6 +206,9 @@ class _Video {
   final String duration;
   final String thumbnail;
   final int avatar;
+
+  /// True swaps the duration pill for a live marker.
+  final bool live;
 }
 
 /// One card in the shorts shelf.
@@ -173,8 +232,6 @@ class _VideoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -189,22 +246,13 @@ class _VideoRow extends StatelessWidget {
               Positioned(
                 right: 8,
                 bottom: 8,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xCC000000),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    video.duration,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                child: video.live
+                    ? const FossBadge(
+                        label: Text('LIVE'),
+                        size: FossBadgeSize.sm,
+                        variant: FossBadgeVariant.destructive,
+                      )
+                    : _DurationBadge(duration: video.duration),
               ),
             ],
           ),
@@ -213,35 +261,59 @@ class _VideoRow extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                DemoAvatar(seed: video.avatar, size: 36),
+                DemoAvatar(seed: video.avatar, size: FossAvatarSize.lg),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      FossText.label(
                         video.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          height: 1.3,
-                        ),
+                        style: const TextStyle(height: 1.3),
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      FossText.caption(
                         '${video.channel} · ${video.meta}',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: scheme.onSurfaceVariant),
+                        color: FossTextColor.mutedForeground,
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.more_vert, size: 18, color: scheme.onSurfaceVariant),
+                Icon(
+                  Icons.more_vert,
+                  size: 18,
+                  color: context.fossTheme.colors.mutedForeground,
+                ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The running time, bottom right of a thumbnail.
+///
+/// A badge with its colours pinned rather than taken from the theme: it sits on
+/// a photograph, so it has to stay legible over whatever that photograph is
+/// doing, in either theme.
+class _DurationBadge extends StatelessWidget {
+  const _DurationBadge({required this.duration});
+
+  final String duration;
+
+  @override
+  Widget build(BuildContext context) {
+    return FossBadge(
+      label: Text(duration),
+      size: FossBadgeSize.sm,
+      style: const FossBadgeStyle(
+        backgroundColor: Color(0xCC000000),
+        foregroundColor: Colors.white,
+        borderColor: Colors.transparent,
       ),
     );
   }
@@ -254,7 +326,6 @@ class _ShortsShelf extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
@@ -272,18 +343,10 @@ class _ShortsShelf extends StatelessWidget {
                     color: const Color(0xFFFF0033),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Icon(
-                    Icons.bolt,
-                    size: 14,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.bolt, size: 14, color: Colors.white),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Shorts',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
+                const FossText.title('Shorts'),
               ],
             ),
           ),
@@ -303,7 +366,9 @@ class _ShortsShelf extends StatelessWidget {
                     children: [
                       DemoImage(
                         assetKey: short.image,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(
+                          context.fossTheme.radii.xl,
+                        ),
                         cacheWidth: 440,
                       ),
                       Positioned(
@@ -313,24 +378,21 @@ class _ShortsShelf extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            // Fixed white over a photograph, for the same
+                            // reason the duration badge is fixed.
+                            FossText.label(
                               short.title,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
                                 height: 1.25,
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
+                            FossText.caption(
                               '${short.views} views',
-                              style: const TextStyle(
-                                color: Color(0xCCFFFFFF),
-                                fontSize: 11,
-                              ),
+                              style: const TextStyle(color: Color(0xCCFFFFFF)),
                             ),
                           ],
                         ),

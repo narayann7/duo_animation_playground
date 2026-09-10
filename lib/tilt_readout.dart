@@ -1,5 +1,6 @@
 import 'package:duo_animation/duo_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:fossui/fossui.dart';
 
 /// Live tilt readout with a recalibrate button.
 ///
@@ -31,7 +32,6 @@ class TiltReadout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
@@ -42,11 +42,14 @@ class TiltReadout extends StatelessWidget {
           return Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(line, style: theme.textTheme.labelMedium),
-              IconButton(
+              FossText.label(line),
+              const SizedBox(width: 4),
+              FossButton.icon(
+                variant: FossButtonVariant.ghost,
+                size: FossButtonSize.sm,
+                semanticLabel: 'Recalibrate',
                 onPressed: controller.recalibrate,
                 icon: const Icon(Icons.center_focus_strong_outlined),
-                tooltip: 'Recalibrate',
               ),
             ],
           );
@@ -57,17 +60,18 @@ class TiltReadout extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(line, style: theme.textTheme.bodyMedium),
+                  FossText.body(line),
                   if (!controller.hasSensor)
-                    Text(
+                    const FossText.caption(
                       'no rotation sensor found, use manual tilt below',
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: theme.colorScheme.error),
+                      color: FossTextColor.destructive,
                     ),
                 ],
               ),
             ),
-            TextButton(
+            FossButton(
+              variant: FossButtonVariant.outline,
+              size: FossButtonSize.sm,
               onPressed: controller.recalibrate,
               child: const Text('Recalibrate'),
             ),

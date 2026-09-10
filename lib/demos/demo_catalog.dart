@@ -28,7 +28,6 @@ class DemoEntry {
   /// Builds the content that goes behind the glass.
   final WidgetBuilder builder;
 
-
   /// Optional controls drawn over the fold, at the bottom of the screen.
   ///
   /// Anything interactive belongs here rather than in [builder]. The filter

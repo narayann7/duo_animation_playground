@@ -21,6 +21,18 @@ grain and edge detail, so a gradient stand-in flatters it and teaches you nothin
 photographs come from Unsplash and are credited in `assets/CREDITS.md`; `DemoImages` is the one
 file to touch when swapping them.
 
+## The look
+
+Controls come from [fossui](https://pub.dev/packages/fossui), pinned at 0.1.2. `MaterialApp` stays
+for the navigator and the scaffolds; everything you can see and press is a `Foss*` widget reading
+one `FossThemeData`. `lib/foss_material_theme.dart` is the bridge: it hands Material a colour
+scheme built from the same tokens, so a fossui card never sits on a Material surface of a
+different shade. The dark theme switch on the configuration screen swaps both at once.
+
+Two things keep fixed colours instead of reading the theme: the duration pill on a video
+thumbnail, and the picker strip in the photo demo. Both sit on top of a photograph, so they have
+to stay readable whatever the picture behind them is doing.
+
 ## Running it
 
 `flutter` is managed by fvm and pinned by the package's `.fvmrc`.
@@ -45,6 +57,7 @@ lib/
   tilt_readout.dart        live tilt and recalibrate
   config/                  the configuration value and its screen
   demos/                   the catalog, the host, and one file per demo
+  foss_material_theme.dart fossui tokens handed to Material
 assets/feed/               photographs for the two feeds
 assets/photos/             photographs for the photo demo
 ```

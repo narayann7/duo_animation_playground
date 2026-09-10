@@ -33,6 +33,12 @@ dependencies:
   # stand-in. Example only: the package itself takes no runtime dependencies.
   image_picker: ^1.2.3
 
+  # Every control in the playground: buttons, sliders, switches, chips,
+  # avatars, badges, type. Pinned rather than caret-ranged because fossui is
+  # pre-1.0 and says its own tokens can move between releases. Playground only:
+  # the package itself takes no runtime dependencies.
+  fossui: 0.1.2
+
 dev_dependencies:
   integration_test:
     sdk: flutter

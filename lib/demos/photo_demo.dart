@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:fossui/fossui.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// A photograph to fold: either one of the bundled ones or a file off the
@@ -125,11 +126,15 @@ class _PhotoPickerBarState extends State<PhotoPickerBar> {
       valueListenable: photoSelection,
       builder: (context, choice, _) {
         final picked = choice.file == null ? null : choice;
+        // The strip floats over a full-bleed photograph, so its colours are
+        // pinned rather than taken from the theme: whatever picture is behind
+        // it, the tiles have to stay visible. Corner radii still come from the
+        // token scale, which nothing behind the strip can argue with.
         return Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0x8A000000),
-            borderRadius: BorderRadius.circular(32),
+          decoration: const BoxDecoration(
+            color: Color(0x8A000000),
+            borderRadius: BorderRadius.all(Radius.circular(FossRadii.full)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -153,14 +158,7 @@ class _PhotoPickerBarState extends State<PhotoPickerBar> {
                   color: const Color(0x33FFFFFF),
                   child: Center(
                     child: _picking
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
+                        ? const FossSpinner(size: 18, color: Colors.white)
                         : const Icon(
                             Icons.add_photo_alternate_outlined,
                             color: Colors.white,
@@ -199,7 +197,7 @@ class _PhotoTile extends StatelessWidget {
           width: 52,
           height: 52,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(context.fossTheme.radii.xl),
             border: Border.all(
               color: selected ? Colors.white : const Color(0x55FFFFFF),
               width: selected ? 2.5 : 1,

@@ -1,8 +1,10 @@
 import 'package:duo_animation/duo_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:fossui/fossui.dart';
 
 import 'config/config_screen.dart';
 import 'config/demo_config.dart';
+import 'foss_material_theme.dart';
 
 /// Entry point for the Duo Animation Playground.
 ///
@@ -65,14 +67,14 @@ class _DuoFoldDemoAppState extends State<DuoFoldDemoApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Registered as a theme extension rather than through a FossTheme wrapper:
+    // context.fossTheme falls back to the extension, so every fossui widget
+    // under the navigator resolves the same tokens without a second inherited
+    // widget in the tree.
     return MaterialApp(
       title: 'Duo Animation Playground',
-      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
-      darkTheme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
+      theme: fossMaterialTheme(FossThemeData.light, Brightness.light),
+      darkTheme: fossMaterialTheme(FossThemeData.dark, Brightness.dark),
       themeMode: _config.darkMode ? ThemeMode.dark : ThemeMode.light,
       home: ConfigScreen(
         controller: _controller,

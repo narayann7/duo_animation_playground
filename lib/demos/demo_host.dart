@@ -1,5 +1,6 @@
 import 'package:duo_animation/duo_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:fossui/fossui.dart';
 
 import '../config/demo_config.dart';
 import 'demo_catalog.dart';
@@ -32,7 +33,7 @@ class DemoHost extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final colors = context.fossTheme.colors;
     return Scaffold(
       // StackFit.expand is load-bearing: a Stack sizes itself to its largest
       // non-positioned child, and the overlay would otherwise decide how much
@@ -43,11 +44,11 @@ class DemoHost extends StatelessWidget {
           DuoFoldMotion(
             controller: controller,
             parameters: config.parameters.copyWith(
-              surroundColor: config.surroundTint.resolve(scheme),
-              hazeColor: config.hazeTint.resolve(scheme),
+              surroundColor: config.surroundTint.resolve(colors),
+              hazeColor: config.hazeTint.resolve(colors),
             ),
             enabled: config.enabled,
-            child: _background(scheme, Builder(builder: entry.builder)),
+            child: _background(colors, Builder(builder: entry.builder)),
           ),
           if (entry.overlayBuilder != null)
             SafeArea(
@@ -64,10 +65,10 @@ class DemoHost extends StatelessWidget {
     );
   }
 
-  Widget _background(ColorScheme scheme, Widget child) {
+  Widget _background(FossColors colors, Widget child) {
     if (!config.paintBackground) {
       return child;
     }
-    return Material(color: scheme.surface, child: child);
+    return Material(color: colors.background, child: child);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fossui/fossui.dart';
 
 import 'demo_images.dart';
 
@@ -8,6 +9,9 @@ import 'demo_images.dart';
 /// Large photographs next to small type is the mix the fold reads best on, and
 /// the pictures are real so the frost has grain and soft edges to work with
 /// rather than a flat gradient.
+///
+/// The layout is the one every photo app converged on. What comes from fossui
+/// is the parts inside it: the avatars, the type steps, the rules, the pills.
 class SocialFeedDemo extends StatelessWidget {
   /// Creates the feed.
   const SocialFeedDemo({super.key});
@@ -44,6 +48,7 @@ class SocialFeedDemo extends StatelessWidget {
       image: DemoImages.meadow,
       caption: 'Sat down for a minute and stayed for an hour.',
       likes: '862',
+      badge: 'New',
     ),
     _Post(
       handle: 'ada.c',
@@ -56,30 +61,23 @@ class SocialFeedDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 12, 10),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 12, 10),
           child: Row(
             children: [
-              Text(
-                'Feed',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const Spacer(),
-              const Icon(Icons.favorite_border, size: 24),
-              const SizedBox(width: 18),
-              const Icon(Icons.chat_bubble_outline, size: 22),
+              FossText.display('Feed'),
+              Spacer(),
+              Icon(Icons.favorite_border, size: 24),
+              SizedBox(width: 18),
+              Icon(Icons.chat_bubble_outline, size: 22),
             ],
           ),
         ),
         SizedBox(
-          height: 96,
+          height: 104,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -88,16 +86,19 @@ class SocialFeedDemo extends StatelessWidget {
             itemBuilder: (context, index) {
               return Column(
                 children: [
-                  DemoAvatar(seed: index, size: 58, ring: index != 0),
-                  const SizedBox(height: 5),
+                  DemoAvatar(
+                    seed: index,
+                    size: FossAvatarSize.xl2,
+                    ring: index != 0,
+                  ),
+                  const SizedBox(height: 6),
                   SizedBox(
                     width: 68,
-                    child: Text(
+                    child: FossText.caption(
                       _stories[index],
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.labelSmall,
                     ),
                   ),
                 ],
@@ -105,7 +106,7 @@ class SocialFeedDemo extends StatelessWidget {
             },
           ),
         ),
-        const Divider(height: 1),
+        const FossSeparator(),
         for (var index = 0; index < _posts.length; index++)
           _FeedPost(post: _posts[index], seed: index + 1),
       ],
@@ -122,6 +123,7 @@ class _Post {
     required this.image,
     required this.caption,
     required this.likes,
+    this.badge,
   });
 
   final String handle;
@@ -129,6 +131,9 @@ class _Post {
   final String image;
   final String caption;
   final String likes;
+
+  /// Optional pill beside the handle, for a post the feed is calling out.
+  final String? badge;
 }
 
 class _FeedPost extends StatelessWidget {
@@ -139,8 +144,7 @@ class _FeedPost extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final theme = context.fossTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -148,18 +152,35 @@ class _FeedPost extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           child: Row(
             children: [
-              DemoAvatar(seed: seed, size: 34),
+              DemoAvatar(seed: seed, size: FossAvatarSize.lg),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      post.handle,
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: FossText.label(
+                            post.handle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (post.badge case final badge?) ...[
+                          const SizedBox(width: 6),
+                          FossBadge(
+                            label: Text(badge),
+                            variant: FossBadgeVariant.secondary,
+                            size: FossBadgeSize.sm,
+                          ),
+                        ],
+                      ],
                     ),
-                    Text(post.place, style: theme.textTheme.labelSmall),
+                    FossText.caption(
+                      post.place,
+                      color: FossTextColor.mutedForeground,
+                    ),
                   ],
                 ),
               ),
@@ -171,9 +192,9 @@ class _FeedPost extends StatelessWidget {
           aspectRatio: 4 / 5,
           child: DemoImage(assetKey: post.image),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-          child: const Row(
+        const Padding(
+          padding: EdgeInsets.fromLTRB(12, 10, 12, 4),
+          child: Row(
             children: [
               Icon(Icons.favorite_border, size: 25),
               SizedBox(width: 16),
@@ -190,29 +211,29 @@ class _FeedPost extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${post.likes} likes',
-                style: theme.textTheme.labelLarge
-                    ?.copyWith(fontWeight: FontWeight.w600),
-              ),
+              FossText.label('${post.likes} likes'),
               const SizedBox(height: 3),
+              // A caption is one paragraph with the handle bolded inside it,
+              // not two widgets, so this is the one place the type step gets
+              // read off the theme rather than picked by a FossText.
               RichText(
                 text: TextSpan(
-                  style: theme.textTheme.bodyMedium,
+                  style: theme.typography.sm.copyWith(
+                    color: theme.colors.foreground,
+                  ),
                   children: [
                     TextSpan(
                       text: '${post.handle} ',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: theme.typography.sm.semibold,
                     ),
                     TextSpan(text: post.caption),
                   ],
                 ),
               ),
               const SizedBox(height: 3),
-              Text(
+              const FossText.caption(
                 'View all 46 comments',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: scheme.onSurfaceVariant),
+                color: FossTextColor.mutedForeground,
               ),
             ],
           ),
