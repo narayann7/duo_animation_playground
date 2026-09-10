@@ -84,9 +84,11 @@ packages:
   duo_animation:
     dependency: "direct main"
     description:
-      path: "../duo_animation"
-      relative: true
-    source: path
+      path: "."
+      ref: main
+      resolved-ref: dfeeefcbdb0e556e0127f2acc471b07e7fb3c37b
+      url: "https://github.com/narayann7/duo_animation.git"
+    source: git
     version: "0.1.0"
   fake_async:
     dependency: transitive

@@ -17,13 +17,14 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Tracks the package's main branch rather than the checkout beside it, so the
+  # playground builds the same code anyone cloning it would get. Swap back to
+  # `path: ../duo_animation` while working on the two together, and to
+  # `duo_animation: ^x.y.z` once a release is on pub.dev.
   duo_animation:
-    # When depending on this package from a real application you should use:
-    #   duo_animation: ^x.y.z
-    # See https://dart.dev/tools/pub/dependencies#version-constraints
-    # The playground sits beside the package and always builds against the
-    # working copy, not a published version.
-    path: ../duo_animation
+    git:
+      url: https://github.com/narayann7/duo_animation.git
+      ref: main
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
