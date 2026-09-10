@@ -1,0 +1,291 @@
+import 'package:flutter/material.dart';
+
+import 'demo_images.dart';
+
+/// A video home feed: a top bar, a shorts shelf and a column of video rows.
+///
+/// Thumbnails are the point. A feed like this puts several large photographs on
+/// screen at once with small type packed between them, which is the densest
+/// mix of the three demos and the one where the fold's parallax reads clearest.
+class YouTubeDemo extends StatelessWidget {
+  /// Creates the video feed.
+  const YouTubeDemo({super.key});
+
+  static const _videos =
+      <({String title, String channel, String meta, String duration})>[
+    (
+      title: 'Sunrise over the harbour: a slow morning walk through the old town',
+      channel: 'Northbound',
+      meta: '412K views - 2 days ago',
+      duration: '14:02',
+    ),
+    (
+      title: 'How this bridge was built twice, and why the second one held',
+      channel: 'Structures Explained',
+      meta: '1.2M views - 1 week ago',
+      duration: '22:47',
+    ),
+    (
+      title: 'Every ride at the summer fair, ranked by someone who hates rides',
+      channel: 'Ordinary Weekends',
+      meta: '86K views - 3 days ago',
+      duration: '9:15',
+    ),
+    (
+      title: 'Shooting a city skyline at golden hour with one prime lens',
+      channel: 'Frame by Frame',
+      meta: '203K views - 5 days ago',
+      duration: '17:31',
+    ),
+  ];
+
+  static const _shorts = <({String title, String views})>[
+    (title: 'The last five minutes of daylight', views: '1.4M'),
+    (title: 'Riverside, no filter', views: '820K'),
+    (title: 'Fair at closing time', views: '3.1M'),
+    (title: 'Downtown from the hill', views: '640K'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        const _TopBar(),
+        for (var index = 0; index < 2; index++)
+          _VideoRow(video: _videos[index], seed: index),
+        const _ShortsShelf(shorts: _shorts),
+        for (var index = 2; index < _videos.length; index++)
+          _VideoRow(video: _videos[index], seed: index),
+      ],
+    );
+  }
+}
+
+class _TopBar extends StatelessWidget {
+  const _TopBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      child: Row(
+        children: [
+          Container(
+            width: 26,
+            height: 18,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF0033),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: const Icon(
+              Icons.play_arrow,
+              size: 13,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Videos',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const Spacer(),
+          const Icon(Icons.cast_outlined, size: 22),
+          const SizedBox(width: 20),
+          const Icon(Icons.notifications_none, size: 22),
+          const SizedBox(width: 20),
+          const Icon(Icons.search, size: 22),
+          const SizedBox(width: 16),
+          const DemoAvatar(seed: 1, size: 28),
+        ],
+      ),
+    );
+  }
+}
+
+class _VideoRow extends StatelessWidget {
+  const _VideoRow({required this.video, required this.seed});
+
+  final ({String title, String channel, String meta, String duration}) video;
+  final int seed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: DemoImage(assetKey: DemoImages.wideAt(seed)),
+              ),
+              Positioned(
+                right: 8,
+                bottom: 8,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xCC000000),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    video.duration,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 8, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DemoAvatar(seed: seed + 2, size: 36),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        video.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${video.channel}  ${video.meta}',
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.more_vert, size: 18, color: scheme.onSurfaceVariant),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShortsShelf extends StatelessWidget {
+  const _ShortsShelf({required this.shorts});
+
+  final List<({String title, String views})> shorts;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 22,
+                  height: 22,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF0033),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(
+                    Icons.bolt,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Shorts',
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 250,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: shorts.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final short = shorts[index];
+                return SizedBox(
+                  width: 148,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      DemoImage(
+                        assetKey: DemoImages.tallAt(index),
+                        borderRadius: BorderRadius.circular(12),
+                        cacheWidth: 440,
+                      ),
+                      Positioned(
+                        left: 8,
+                        right: 8,
+                        bottom: 8,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              short.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                height: 1.25,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${short.views} views',
+                              style: const TextStyle(
+                                color: Color(0xCCFFFFFF),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
