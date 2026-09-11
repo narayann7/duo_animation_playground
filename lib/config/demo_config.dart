@@ -42,14 +42,28 @@ enum DemoConstraintOption {
 ///
 /// [surface] follows the active theme. The rest are fixed so a tint can be
 /// judged against both themes without moving under you.
+///
+/// Two families and nothing in between, because that is what the two settings
+/// they feed actually want. The haze is what the frost fades toward as the
+/// blur widens: the darks absorb, which is the package default and what the
+/// optics were tuned against, and the pale tints veil, which is how real
+/// frosted glass behaves. A saturated accent does neither. It stains the
+/// picture, and at the blur widths worth looking at there is nothing left of
+/// the photograph to judge.
+///
+/// Ordered dark to light, so the row reads as a ramp rather than a set.
 enum DemoTint {
   black('Black', Color(0xFF000000)),
+  charcoal('Charcoal', Color(0xFF1C1C1E)),
+  graphite('Graphite', Color(0xFF3A3A3C)),
   surface('Surface', null),
   white('White', Color(0xFFFFFFFF)),
-  indigo('Indigo', Color(0xFF4F46E5)),
-  teal('Teal', Color(0xFF0D9488)),
-  amber('Amber', Color(0xFFF59E0B)),
-  rose('Rose', Color(0xFFE11D48));
+  ivory('Ivory', Color(0xFFFAF6EC)),
+  sand('Sand', Color(0xFFEDE0CB)),
+  blush('Blush', Color(0xFFF6DCE0)),
+  mist('Mist', Color(0xFFDBE6F3)),
+  sage('Sage', Color(0xFFDCE8DA)),
+  lilac('Lilac', Color(0xFFE5DEF2));
 
   const DemoTint(this.label, this._color);
 
@@ -82,6 +96,7 @@ class DemoConfig {
     this.autoRecenter = true,
     this.useSensor = true,
     this.manualTiltDegrees = 0,
+    this.enableSlider = false,
     this.darkMode = false,
     this.paintBackground = true,
     this.hazeTint = DemoTint.black,
@@ -106,6 +121,15 @@ class DemoConfig {
 
   /// Hand-driven tilt, used on hardware with no rotation sensor.
   final double manualTiltDegrees;
+
+  /// True puts a tilt slider on top of every demo and takes the sensors out of
+  /// the loop.
+  ///
+  /// The two cannot both drive the fold, so this wins: the host forces the
+  /// controller onto manual tilt while it is set, and [useSensor] keeps
+  /// whatever it was so turning the slider back off restores the choice rather
+  /// than a default.
+  final bool enableSlider;
 
   /// Dark theme for the demo screens and the config screen alike.
   final bool darkMode;
@@ -138,6 +162,7 @@ class DemoConfig {
     bool? autoRecenter,
     bool? useSensor,
     double? manualTiltDegrees,
+    bool? enableSlider,
     bool? darkMode,
     bool? paintBackground,
     DemoTint? hazeTint,
@@ -150,6 +175,7 @@ class DemoConfig {
       autoRecenter: autoRecenter ?? this.autoRecenter,
       useSensor: useSensor ?? this.useSensor,
       manualTiltDegrees: manualTiltDegrees ?? this.manualTiltDegrees,
+      enableSlider: enableSlider ?? this.enableSlider,
       darkMode: darkMode ?? this.darkMode,
       paintBackground: paintBackground ?? this.paintBackground,
       hazeTint: hazeTint ?? this.hazeTint,
@@ -225,6 +251,7 @@ class DemoConfig {
         'manualTiltDegrees',
         defaults.manualTiltDegrees,
       ),
+      enableSlider: _boolFrom(json, 'enableSlider', defaults.enableSlider),
       darkMode: _boolFrom(json, 'darkMode', defaults.darkMode),
       paintBackground:
           _boolFrom(json, 'paintBackground', defaults.paintBackground),
@@ -254,6 +281,7 @@ class DemoConfig {
       'autoRecenter': autoRecenter,
       'useSensor': useSensor,
       'manualTiltDegrees': manualTiltDegrees,
+      'enableSlider': enableSlider,
       'darkMode': darkMode,
       'paintBackground': paintBackground,
       'hazeTint': hazeTint.name,

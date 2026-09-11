@@ -52,12 +52,19 @@ class _DuoFoldDemoAppState extends State<DuoFoldDemoApp> {
   /// latched reference pose.
   final DuoFoldController _controller = DuoFoldController();
 
-  late DemoConfig _config = widget.initialConfig;
+  /// The live configuration.
+  ///
+  /// A notifier rather than plain state because the demos are pushed routes: a
+  /// route keeps the page it first built, so setState here would never reach a
+  /// demo that is already open, and the tilt slider drawn over one edits this
+  /// value from in there.
+  late final ValueNotifier<DemoConfig> _config =
+      ValueNotifier<DemoConfig>(widget.initialConfig);
 
   @override
   void initState() {
     super.initState();
-    _applyToController(_config);
+    _applyToController(_config.value);
     _controller.start();
   }
 
@@ -68,12 +75,17 @@ class _DuoFoldDemoAppState extends State<DuoFoldDemoApp> {
     _controller
       ..constraints = config.constraintOption.constraints
       ..autoRecenter = config.autoRecenter
-      ..useSensor = config.useSensor
+      // The one place the two tilt sources are reconciled. An on-screen slider
+      // and a live sensor cannot both drive the fold, and the slider is the one
+      // you asked for, so it wins here rather than in every screen that reads
+      // the config. config.useSensor is left as it was, so turning the slider
+      // off hands tilt back to whatever was chosen before.
+      ..useSensor = config.useSensor && !config.enableSlider
       ..manualTiltDegrees = config.manualTiltDegrees;
   }
 
   void _onConfigChanged(DemoConfig config) {
-    setState(() => _config = config);
+    _config.value = config;
     _applyToController(config);
     // Debounced inside the store: a slider drag is one write, not one per
     // frame.
@@ -82,6 +94,7 @@ class _DuoFoldDemoAppState extends State<DuoFoldDemoApp> {
 
   @override
   void dispose() {
+    _config.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -92,12 +105,21 @@ class _DuoFoldDemoAppState extends State<DuoFoldDemoApp> {
     // context.fossTheme falls back to the extension, so every fossui widget
     // under the navigator resolves the same tokens without a second inherited
     // widget in the tree.
-    return MaterialApp(
-      title: 'Duo Animation Playground',
-      theme: fossMaterialTheme(FossThemeData.light, Brightness.light),
-      darkTheme: fossMaterialTheme(FossThemeData.dark, Brightness.dark),
-      themeMode: _config.darkMode ? ThemeMode.dark : ThemeMode.light,
-      home: ConfigScreen(
+    // Only the theme is read here. Everything below the navigator follows the
+    // notifier itself, which is what gets past a pushed route.
+    return ValueListenableBuilder<DemoConfig>(
+      valueListenable: _config,
+      builder: (context, config, home) => MaterialApp(
+        title: 'Duo Animation Playground',
+        theme: fossMaterialTheme(FossThemeData.light, Brightness.light),
+        darkTheme: fossMaterialTheme(FossThemeData.dark, Brightness.dark),
+        themeMode: config.darkMode ? ThemeMode.dark : ThemeMode.light,
+        home: home,
+      ),
+      // Built once and handed back on every rebuild: the config screen reads
+      // the notifier for itself, so a drag on a slider has no business
+      // rebuilding it.
+      child: ConfigScreen(
         controller: _controller,
         config: _config,
         onChanged: _onConfigChanged,

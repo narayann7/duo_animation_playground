@@ -1,10 +1,20 @@
 import 'package:duo_animation/duo_animation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fossui/fossui.dart';
 
 import '../demos/demo_gallery_screen.dart';
 import '../tilt_readout.dart';
 import 'demo_config.dart';
+
+/// Title of the row that turns the on-screen tilt slider on.
+///
+/// Named rather than inlined because it is the switch's semantic label too, so
+/// it is how a screen reader and a test both find the row.
+const String sliderSwitchTitle = 'Tilt slider in the demos';
+
+/// Title of the row that hands tilt to the rotation sensors.
+const String sensorSwitchTitle = 'Drive from sensors';
 
 /// The screen the app opens on: every knob in one place, then a button through
 /// to the demo gallery.
@@ -23,14 +33,28 @@ class ConfigScreen extends StatelessWidget {
   /// The single controller shared by the whole app.
   final DuoFoldController controller;
 
-  /// Current configuration.
-  final DemoConfig config;
+  /// The live configuration.
+  ///
+  /// A listenable rather than a value because of what this screen pushes. A
+  /// route builds its page once and keeps it: the closure below captures
+  /// whatever is handed to it at the moment you open a demo, and an open demo
+  /// that edits the config, which is what the tilt slider does, would be
+  /// reading its own stale copy forever.
+  final ValueListenable<DemoConfig> config;
 
   /// Called with the edited configuration.
   final ValueChanged<DemoConfig> onChanged;
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<DemoConfig>(
+      valueListenable: config,
+      builder: (context, value, _) => _body(context, value),
+    );
+  }
+
+  /// The screen proper, against one reading of the config.
+  Widget _body(BuildContext context, DemoConfig config) {
     final parameters = config.parameters;
     return Scaffold(
       // No app bar. This screen is the root, so there is nothing to go back to,
@@ -223,17 +247,35 @@ class ConfigScreen extends StatelessWidget {
               listenable: controller,
               builder: (context, _) {
                 final hasSensor = controller.hasSensor;
+                // The slider wins over the sensors wherever the two disagree.
+                // config.useSensor is left alone underneath, so turning the
+                // slider back off restores the choice that was made here.
+                final sliderDriving = config.enableSlider;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _SwitchRow(
-                      title: 'Drive from sensors',
-                      help: hasSensor
-                          ? 'Off hands tilt to the slider below.'
-                          : 'No rotation sensor on this device, so tilt comes '
-                              'from the slider below.',
-                      value: config.useSensor && hasSensor,
-                      onChanged: hasSensor
+                      title: sliderSwitchTitle,
+                      help: 'On draws a tilt slider over every demo and takes '
+                          'the sensors out of the loop. The thumb stays where '
+                          'you leave it, so a fold can be held open and looked '
+                          'at rather than balanced by hand. Double tap the '
+                          'thumb to drop back to flat.',
+                      value: config.enableSlider,
+                      onChanged: (value) =>
+                          onChanged(config.copyWith(enableSlider: value)),
+                    ),
+                    _SwitchRow(
+                      title: sensorSwitchTitle,
+                      help: sliderDriving
+                          ? 'The slider is driving. Turn it off to hand tilt '
+                              'back to the sensors.'
+                          : hasSensor
+                              ? 'Off hands tilt to the slider below.'
+                              : 'No rotation sensor on this device, so tilt '
+                                  'comes from the slider below.',
+                      value: config.useSensor && hasSensor && !sliderDriving,
+                      onChanged: hasSensor && !sliderDriving
                           ? (value) =>
                               onChanged(config.copyWith(useSensor: value))
                           : null,
@@ -245,10 +287,18 @@ class ConfigScreen extends StatelessWidget {
                       max: 45,
                       fractionDigits: 0,
                       unit: ' deg',
-                      enabled: !(config.useSensor && hasSensor),
-                      help:
-                          'Manual tilt hinges horizontally only, so a vertical '
-                          'constraint reads flat while this drives the effect.',
+                      enabled:
+                          !sliderDriving && !(config.useSensor && hasSensor),
+                      help: sliderDriving
+                          // Greyed but still live: this is the same number the
+                          // on-screen slider writes, and reading it back here
+                          // is how you find out what angle a fold you liked
+                          // was at.
+                          ? 'Set by the slider in the demos. Shown here so the '
+                              'angle you settled on has a number on it.'
+                          : 'Manual tilt hinges horizontally only, so a '
+                              'vertical constraint reads flat while this '
+                              'drives the effect.',
                       onChanged: (value) =>
                           onChanged(config.copyWith(manualTiltDegrees: value)),
                     ),
@@ -294,8 +344,14 @@ class ConfigScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
+                    // this.config, not the local reading of it: the gallery
+                    // and the demo under it have to follow the config, not be
+                    // handed a photograph of it.
                     builder: (context) => DemoGalleryScreen(
-                        controller: controller, config: config),
+                      controller: controller,
+                      config: this.config,
+                      onChanged: onChanged,
+                    ),
                   ),
                 );
               },

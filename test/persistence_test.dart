@@ -29,10 +29,11 @@ void main() {
         autoRecenter: false,
         useSensor: false,
         manualTiltDegrees: 17,
+        enableSlider: true,
         darkMode: true,
         paintBackground: false,
-        hazeTint: DemoTint.teal,
-        surroundTint: DemoTint.rose,
+        hazeTint: DemoTint.mist,
+        surroundTint: DemoTint.charcoal,
       );
 
       final restored = DemoConfig.fromJson(config.toJson());
@@ -43,10 +44,11 @@ void main() {
       expect(restored.autoRecenter, isFalse);
       expect(restored.useSensor, isFalse);
       expect(restored.manualTiltDegrees, 17);
+      expect(restored.enableSlider, isTrue);
       expect(restored.darkMode, isTrue);
       expect(restored.paintBackground, isFalse);
-      expect(restored.hazeTint, DemoTint.teal);
-      expect(restored.surroundTint, DemoTint.rose);
+      expect(restored.hazeTint, DemoTint.mist);
+      expect(restored.surroundTint, DemoTint.charcoal);
     });
 
     test('falls back to the defaults field by field', () {
@@ -67,6 +69,24 @@ void main() {
       expect(restored.constraintOption, defaults.constraintOption);
       expect(restored.parameters.darkening, defaults.parameters.darkening);
       expect(restored.enabled, defaults.enabled);
+      expect(restored.enableSlider, defaults.enableSlider);
+    });
+
+    test('a tint that has been dropped from the palette falls back', () {
+      const defaults = DemoConfig();
+
+      // Written by a build whose palette had accent colours in it. Those are
+      // gone, and a saved file naming one is worth a default swatch rather
+      // than a dead setting or a failed read.
+      final restored = DemoConfig.fromJson(<String, Object?>{
+        'hazeTint': 'teal',
+        'surroundTint': 'rose',
+        'darkMode': true,
+      });
+
+      expect(restored.hazeTint, defaults.hazeTint);
+      expect(restored.surroundTint, defaults.surroundTint);
+      expect(restored.darkMode, isTrue);
     });
   });
 

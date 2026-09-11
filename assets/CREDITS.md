@@ -31,4 +31,29 @@ because the photographers did the work.
 | `feed/a_berries.jpg` | Ben Moore | https://unsplash.com/photos/pJILiyPdrXI |
 | `feed/a_cactus.jpg` | Shane Colella | https://unsplash.com/photos/znM0ujn2RUA |
 
+The thumbnails in `assets/tube/` came the same way, and are used for the video demo.
+
+| File | Photographer | Source |
+| --- | --- | --- |
+| `tube/fjord.jpg` | Alexey Topolyanskiy | https://unsplash.com/photos/-oWyJoSqBRM |
+| `tube/desert.jpg` | Philippe Wuyts | https://unsplash.com/photos/_h7aBovKia4 |
+| `tube/ridge.jpg` | Andrew Ridley | https://unsplash.com/photos/Kt5hRENuotI |
+| `tube/storm.jpg` | Patrick Fore | https://unsplash.com/photos/V6s1cmE39XM |
+| `tube/camp.jpg` | Wolfgang Lutz | https://unsplash.com/photos/yOujaSETXlo |
+| `tube/waterfall.jpg` | Andrew Coelho | https://unsplash.com/photos/VB-w_3dnyvI |
+| `tube/valley.jpg` | Christian Joudrey | https://unsplash.com/photos/mWRR1xj95hg |
+| `tube/river.jpg` | Steve Carter | https://unsplash.com/photos/Ixp4YhCKZkI |
+| `tube/alley.jpg` | sergee bee | https://unsplash.com/photos/bIQiMWxX_WU |
+| `tube/surf.jpg` | Anna Popović | https://unsplash.com/photos/x7HJdJZqplo |
+| `tube/workshop.jpg` | Clark Street Mercantile | https://unsplash.com/photos/vC-GqGbakJo |
+| `tube/coast.jpg` | Rob Bye | https://unsplash.com/photos/Kc7xqFTtcc4 |
+| `tube/skyline.jpg` | Kevin Young | https://unsplash.com/photos/-icmOdYWXuQ |
+| `tube/lioness.jpg` | Samuel Scrimshaw | https://unsplash.com/photos/sseiVD2XsOk |
+| `tube/strawberries.jpg` | veeterzy | https://unsplash.com/photos/OJJIaFZOeX4 |
+| `tube/canal.jpg` | Linh Nguyen | https://unsplash.com/photos/agkblvPff5U |
+| `tube/desk.jpg` | Galymzhan Abdugalimov | https://unsplash.com/photos/ICW6QYOcdlg |
+| `tube/barn.jpg` | Philipp Reiner | https://unsplash.com/photos/qPJ6eRAMmCM |
+| `tube/teapot.jpg` | Vee O | https://unsplash.com/photos/hGO27G5tZJ8 |
+| `tube/neon.jpg` | Wojtek Witkowski | https://unsplash.com/photos/h7rOzTmGxWE |
+
 The three photographs in `assets/photos/`, used by the photo demo, were supplied separately.

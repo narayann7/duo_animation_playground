@@ -227,12 +227,31 @@ class PhotoDemo extends StatelessWidget {
   }
 }
 
-/// The strip of photographs at the bottom of the photo demo.
+/// The strip of photographs over the photo demo.
 ///
 /// Drawn over the fold rather than inside it, so it stays where you tap it.
+///
+/// Runs along the bottom normally and down the right edge when [axis] is
+/// vertical, which is where it goes once the tilt slider has claimed the
+/// bottom of the screen.
 class PhotoPickerBar extends StatefulWidget {
   /// Creates the strip.
-  const PhotoPickerBar({super.key});
+  const PhotoPickerBar({
+    super.key,
+    this.axis = Axis.horizontal,
+    this.onSelectionChanged,
+  });
+
+  /// Which way the tiles run.
+  final Axis axis;
+
+  /// Called when the photograph on screen changes.
+  ///
+  /// Fired off the library rather than off the tap handlers, so it covers
+  /// every way the picture can change: tapping a tile, importing one, which
+  /// selects it, and removing the one being shown, which falls back to the
+  /// first bundled photograph.
+  final VoidCallback? onSelectionChanged;
 
   @override
   State<PhotoPickerBar> createState() => _PhotoPickerBarState();
@@ -242,6 +261,44 @@ class _PhotoPickerBarState extends State<PhotoPickerBar> {
   final ImagePicker _picker = ImagePicker();
 
   bool _picking = false;
+
+  /// Whether the photographs are on show.
+  ///
+  /// Closed to start with. The strip sits on top of the very thing it is
+  /// choosing, edge to edge and full bleed, so leaving it open by default
+  /// would mean the demo always opens with a bar across the picture.
+  bool _open = false;
+
+  /// What was on screen last time the library moved, so a change to the
+  /// imports alone is not mistaken for a change of picture.
+  ///
+  /// Assigned in initState rather than at the declaration: a late initialiser
+  /// runs on first read, which would be inside the listener below, by which
+  /// point the library already holds the new selection and every change reads
+  /// as no change at all.
+  late PhotoChoice _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = photoLibrary.value.selected;
+    photoLibrary.addListener(_onLibraryChanged);
+  }
+
+  @override
+  void dispose() {
+    photoLibrary.removeListener(_onLibraryChanged);
+    super.dispose();
+  }
+
+  void _onLibraryChanged() {
+    final selected = photoLibrary.value.selected;
+    if (selected == _selected) {
+      return;
+    }
+    _selected = selected;
+    widget.onSelectionChanged?.call();
+  }
 
   Future<void> _pick() async {
     if (_picking) {
@@ -312,36 +369,79 @@ class _PhotoPickerBarState extends State<PhotoPickerBar> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// The dark lozenge everything in the strip sits on.
+  ///
+  /// Colours are pinned rather than taken from the theme: this floats over a
+  /// full-bleed photograph, and whatever picture is behind it, the controls
+  /// have to stay visible. Corner radii still come from the token scale, which
+  /// nothing behind the strip can argue with.
+  Widget _pill({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: const BoxDecoration(
+        color: Color(0x8A000000),
+        borderRadius: BorderRadius.all(Radius.circular(FossRadii.full)),
+      ),
+      child: child,
+    );
+  }
+
+  /// One square carrying [icon], built like a photograph tile so the controls
+  /// and the pictures line up at the same size.
+  Widget _iconTile(IconData icon, VoidCallback onTap) {
+    return _PhotoTile(
+      axis: widget.axis,
+      selected: false,
+      onTap: onTap,
+      child: ColoredBox(
+        color: const Color(0x33FFFFFF),
+        child: Center(child: Icon(icon, color: Colors.white, size: 22)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!_open) {
+      // Nothing is read off the library while it is shut, so there is no
+      // reason to listen to it either.
+      return _pill(
+        child: _iconTile(
+          Icons.photo_library_outlined,
+          () => setState(() => _open = true),
+        ),
+      );
+    }
     return ValueListenableBuilder<PhotoLibrary>(
       valueListenable: photoLibrary,
       builder: (context, library, _) {
-        // The strip floats over a full-bleed photograph, so its colours are
-        // pinned rather than taken from the theme: whatever picture is behind
-        // it, the tiles have to stay visible. Corner radii still come from the
-        // token scale, which nothing behind the strip can argue with.
-        return Container(
-          padding: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(
-            color: Color(0x8A000000),
-            borderRadius: BorderRadius.all(Radius.circular(FossRadii.full)),
-          ),
-          // A full library is nine tiles, which is wider than a phone. The
-          // constraint is what gives the scroll view something to scroll
-          // inside: the strip is bottom-aligned in a stack, so the height is
-          // pinned but the width arrives loose.
+        final vertical = widget.axis == Axis.vertical;
+        final size = MediaQuery.sizeOf(context);
+        return _pill(
+          // A full library is nine tiles, which is longer than a phone either
+          // way round. The constraint is what gives the scroll view something
+          // to scroll inside: the strip is aligned to an edge in a stack, so
+          // the measurement across it is pinned but the one along it arrives
+          // loose. Lying down, the room left is the screen less the slider's
+          // band at the bottom and the notch at the top.
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.sizeOf(context).width - 48,
-            ),
+            constraints: vertical
+                ? BoxConstraints(maxHeight: size.height - 220)
+                : BoxConstraints(maxWidth: size.width - 48),
             child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
+              scrollDirection: widget.axis,
+              child: Flex(
+                direction: widget.axis,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // First, so it is under the same finger that opened it.
+                  _iconTile(
+                    Icons.close,
+                    () => setState(() => _open = false),
+                  ),
                   for (final photo in library.all)
                     _PhotoTile(
+                      axis: widget.axis,
                       selected: photo == library.selected,
                       onTap: () => photoLibrary.value =
                           library.copyWith(selected: photo),
@@ -350,6 +450,7 @@ class _PhotoPickerBarState extends State<PhotoPickerBar> {
                       child: photo.build(cacheWidth: 160),
                     ),
                   _PhotoTile(
+                    axis: widget.axis,
                     selected: false,
                     onTap: _pick,
                     child: ColoredBox(
@@ -385,11 +486,15 @@ class _PhotoPickerBarState extends State<PhotoPickerBar> {
 /// badged when it is one you can remove.
 class _PhotoTile extends StatelessWidget {
   const _PhotoTile({
+    required this.axis,
     required this.selected,
     required this.onTap,
     required this.child,
     this.onDelete,
   });
+
+  /// Which way the strip runs, so the gap between tiles falls along it.
+  final Axis axis;
 
   final bool selected;
   final VoidCallback onTap;
@@ -402,7 +507,9 @@ class _PhotoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final onDelete = this.onDelete;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: axis == Axis.vertical
+          ? const EdgeInsets.symmetric(vertical: 4)
+          : const EdgeInsets.symmetric(horizontal: 4),
       child: GestureDetector(
         onTap: onTap,
         child: Container(
